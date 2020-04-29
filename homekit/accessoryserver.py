@@ -912,7 +912,14 @@ class AccessoryRequestHandler(BaseHTTPRequestHandler):
                 if server_data.is_peer_admin(pairing_id.encode()):
                     user = TlvTypes.Permission_AdminUser
                 tmp.append(tlv8.Entry(TlvTypes.Permissions, user))
-            result_bytes = tlv8.encode(tmp)
+                # force insertion of separator as of issue #193 (https://github.com/jlusiardi/homekit_python/issues/193)
+                # see Spec R2 page 46 chapter 5.12.2 which says there must be a separator entry
+                if index < len(server_data.peers) - 1:
+                    tmp.append(tlv8.Entry(0xff, b''))
+
+            # separators inserted manually as of issue #193 (https://github.com/jlusiardi/homekit_python/issues/193)
+            # these would raise issues so we override the separator_type_id here
+            result_bytes = tlv8.encode(tmp, separator_type_id=0xfe)
 
             # 4) send response
             self.send_response(HttpStatusCodes.OK)
